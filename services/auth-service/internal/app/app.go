@@ -15,7 +15,7 @@ func Run(logger *logger.Log) {
 	container.Logger.Logger.Info("application initialized successfully")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/register", container.Handler.RegistrationHandler)
+	mux.HandleFunc("/register", container.Handler.RegisterHandler)
 	mux.HandleFunc("/login", container.Handler.LoginHandler)
 
 	server := &http.Server{
@@ -25,7 +25,7 @@ func Run(logger *logger.Log) {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			container.Logger.Logger.Error("Server ListenAndServe error", err)
+			container.Logger.Logger.Error("Server ListenAndServe error", "error", err)
 		}
 	}()
 
@@ -42,7 +42,7 @@ func Run(logger *logger.Log) {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		container.Logger.Logger.Warn("Server forced to shutdown", err)
+		container.Logger.Logger.Warn("Server forced to shutdown", "error", err)
 	} else {
 		container.Logger.Logger.Info("Server stoppe gracefully")
 	}

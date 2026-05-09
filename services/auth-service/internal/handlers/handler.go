@@ -2,14 +2,21 @@ package handlers
 
 import (
 	"auth-service/internal/logger"
+	pkg_dto "auth-service/internal/pkg"
 )
 
-type Handler struct {
-	log *logger.Log
+type Service interface {
+	Register(email, password string) (*pkg_dto.TokenResponse, error)
 }
 
-func NewHandler(log *logger.Log) *Handler {
+type Handler struct {
+	service Service
+	log     *logger.Log
+}
+
+func NewHandler(log *logger.Log, s Service) *Handler {
 	return &Handler{
-		log: log,
+		log:     log,
+		service: s,
 	}
 }
