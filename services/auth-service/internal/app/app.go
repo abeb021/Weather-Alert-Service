@@ -1,17 +1,17 @@
 package app
 
 import (
+	"auth-service/config"
 	"auth-service/internal/logger"
 	"context"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
-func Run(logger *logger.Log) {
-	container := NewContainer(logger)
+func Run(logger *logger.Log, cfg *config.Config) {
+	container := NewContainer(logger, cfg)
 	container.Logger.Logger.Info("application initialized successfully")
 
 	mux := http.NewServeMux()
@@ -19,7 +19,7 @@ func Run(logger *logger.Log) {
 	mux.HandleFunc("/login", container.Handler.LoginHandler)
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    cfg.Server.Addr,
 		Handler: mux,
 	}
 
@@ -29,7 +29,7 @@ func Run(logger *logger.Log) {
 		}
 	}()
 
-	container.Logger.Logger.Info("Server started on :8080")
+	container.Logger.Logger.Info("Server started", "addr", cfg.Server.Addr)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -37,8 +37,7 @@ func Run(logger *logger.Log) {
 
 	container.Logger.Logger.Info("Shutdown signal received")
 
-	// потом 10сек вынести в конфиг файл
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.GracefulShutdownTimeout)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {

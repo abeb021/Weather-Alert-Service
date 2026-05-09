@@ -1,19 +1,60 @@
 services:
-  api-gateway:
+  # api-gateway:
+  #   build:
+  #     context: ../api-gateway
+  #   ports:
+  #     - "80:80"
+  #   networks:
+  #     - weather-network
+  #   depends_on:
+  #     - auth-service
+  #     - weather-service
+  #     - alert-service
+  #     - notification-service
+  #   restart: unless-stopped
+
+  auth-service:
     build:
-      context: ../api-gateway
+      context: ../services/auth-service
+      dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "8081:8080"
+    env_file:
+      - ../services/auth-service/.env
+    environment:
+      USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      MIGRATIONS_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
     networks:
       - weather-network
     depends_on:
-      - auth-service
-      - weather-service
-      - alert-service
-      - notification-service
+      auth-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  auth-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
 
 networks:
   weather-network:
     driver: bridge
+
+volumes:
+  auth-db-data:
