@@ -1,0 +1,19 @@
+services:
+  api-gateway:
+    build:
+      context: ../api-gateway
+    ports:
+      - "80:80"
+    networks:
+      - weather-network
+    depends_on:
+      - auth-service
+      - weather-service
+      - alert-service
+      - notification-service
+    restart: unless-stopped
+
+
+networks:
+  weather-network:
+    driver: bridge
