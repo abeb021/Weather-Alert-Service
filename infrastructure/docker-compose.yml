@@ -1,26 +1,26 @@
 services:
-  # api-gateway:
-  #   build:
-  #     context: ../api-gateway
-  #   ports:
-  #     - "80:80"
-  #   networks:
-  #     - weather-network
-  #   depends_on:
-  #     - auth-service
-  #     - weather-service
-  #     - alert-service
-  #     - notification-service
-  #   restart: unless-stopped
+  api-gateway:
+    build:
+       context: ../api-gateway
+    ports:
+      - "80:80"
+    networks:
+      - weather-network
+    depends_on:
+      - auth-service
+      #- weather-service
+      #- alert-service
+      #- notification-service
+    restart: unless-stopped 
 
   auth-service:
     build:
       context: ../services/auth-service
       dockerfile: Dockerfile
-    ports:
-      - "8081:8080"
+    expose:
+      - "8001"
     env_file:
-      - ../services/auth-service/.env
+      - ../.env
     environment:
       USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
       TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
@@ -38,14 +38,14 @@ services:
       POSTGRES_DB: auth
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
+    expose:
+      - 5432
     volumes:
       - auth-db-data:/var/lib/postgresql/data
     networks:
       - weather-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10

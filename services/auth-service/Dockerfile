@@ -21,7 +21,7 @@ COPY .env /app/.env
 COPY migrations /app/migrations
 COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 8081
+EXPOSE 8001
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/app/auth-service"]
