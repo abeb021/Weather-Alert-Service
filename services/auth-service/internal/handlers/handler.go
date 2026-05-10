@@ -8,6 +8,8 @@ import (
 type Service interface {
 	Register(email, password string) (*pkg_dto.TokenResponse, error)
 	Login(email, password string) (*pkg_dto.TokenResponse, error)
+	Refresh(refreshToken string) (*pkg_dto.TokenResponse, error)
+	ValidateAccessToken(accessToken string) (*pkg_dto.ValidateResponse, error)
 }
 
 type Handler struct {
