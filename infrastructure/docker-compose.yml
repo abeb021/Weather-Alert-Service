@@ -60,9 +60,8 @@ services:
     env_file:
       - ../.env
     environment:
-      USER_DB_URL: "postgres://postgres:postgres@weather-db:5432/weather?sslmode=disable"
-      TOKEN_DB_URL: "postgres://postgres:postgres@weather-db:5432/weather?sslmode=disable"
-      MIGRATIONS_DB_URL: "postgres://postgres:postgres@weather-db:5432/weather?sslmode=disable"
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      REDIS_URL: "redis://redis:6379"
     networks:
       - weather-network
     depends_on:
@@ -181,7 +180,7 @@ services:
     volumes:
       - kafka-data:/var/lib/kafka/data
     networks:
-      - wave-connect
+      - weather-network
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
       interval: 10s
