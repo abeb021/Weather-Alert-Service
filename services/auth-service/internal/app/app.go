@@ -3,6 +3,7 @@ package app
 import (
 	"auth-service/config"
 	"auth-service/internal/logger"
+	"auth-service/internal/middleware"
 	"context"
 	"net/http"
 	"os"
@@ -17,10 +18,24 @@ func Run(logger *logger.Log, cfg *config.Config) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/register", container.Handler.RegisterHandler)
 	mux.HandleFunc("/login", container.Handler.LoginHandler)
+	mux.HandleFunc("/refresh", container.Handler.RefreshHandler)
+	mux.HandleFunc("/validate", container.Handler.ValidateHandler)
+	mux.HandleFunc("/health", container.Handler.HealthHandler)
+
+	publicPaths := map[string]struct{}{
+		"/register": {},
+		"/login":    {},
+		"/refresh":  {},
+		"/validate": {},
+		"/health":   {},
+	}
+	handler := middleware.RequestLogger(container.Logger.Logger)(
+		middleware.Auth(container.JWTService, publicPaths)(mux),
+	)
 
 	server := &http.Server{
 		Addr:    cfg.Server.Addr,
-		Handler: mux,
+		Handler: handler,
 	}
 
 	go func() {

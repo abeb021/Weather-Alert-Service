@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"time"
 
 	pkg_dto "auth-service/internal/pkg"
@@ -10,8 +11,9 @@ import (
 )
 
 type JWTService struct {
-	secret         []byte
-	accessTokenTTL time.Duration
+	secret          []byte
+	accessTokenTTL  time.Duration
+	refreshTokenTTL time.Duration
 }
 
 type AccessClaims struct {
@@ -20,10 +22,11 @@ type AccessClaims struct {
 	jwt.RegisteredClaims
 }
 
-func NewJWTService(secret string, accessTTL time.Duration) *JWTService {
+func NewJWTService(secret string, accessTTL, refreshTTL time.Duration) *JWTService {
 	return &JWTService{
-		secret:         []byte(secret),
-		accessTokenTTL: accessTTL,
+		secret:          []byte(secret),
+		accessTokenTTL:  accessTTL,
+		refreshTokenTTL: refreshTTL,
 	}
 }
 
@@ -45,8 +48,32 @@ func (s *JWTService) Generate(userID, email string) (*pkg_dto.TokenPair, error) 
 	}
 
 	return &pkg_dto.TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: uuid.NewString(),
-		ExpiresAt:    claims.ExpiresAt.Time,
+		AccessToken:      accessToken,
+		RefreshToken:     uuid.NewString(),
+		ExpiresAt:        claims.ExpiresAt.Time,
+		RefreshExpiresAt: now.Add(s.refreshTokenTTL),
 	}, nil
+}
+
+func (s *JWTService) Validate(tokenString string) (*AccessClaims, error) {
+	claims := &AccessClaims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+
+		return s.secret, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	if claims.ExpiresAt == nil {
+		return nil, errors.New("missing expiration")
+	}
+
+	return claims, nil
 }

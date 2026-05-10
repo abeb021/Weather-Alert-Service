@@ -1,9 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
+
+	"auth-service/internal/utils"
 )
 
 type responseWriter struct {
@@ -49,6 +53,42 @@ func RequestLogger(log *slog.Logger) func(http.Handler) http.Handler {
 				slog.Int("bytes", rw.bytes),
 				slog.Duration("duration", duration),
 			)
+		})
+	}
+}
+
+type contextKey string
+
+const (
+	userIDContextKey contextKey = "user_id"
+	emailContextKey  contextKey = "email"
+)
+
+func Auth(jwtService *utils.JWTService, publicPaths map[string]struct{}) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := publicPaths[r.URL.Path]; ok {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			authHeader := r.Header.Get("Authorization")
+			tokenString, ok := strings.CutPrefix(authHeader, "Bearer ")
+			if !ok || strings.TrimSpace(tokenString) == "" {
+				http.Error(w, "missing bearer token", http.StatusUnauthorized)
+				return
+			}
+
+			claims, err := jwtService.Validate(strings.TrimSpace(tokenString))
+			if err != nil {
+				http.Error(w, "invalid bearer token", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userIDContextKey, claims.UserID)
+			ctx = context.WithValue(ctx, emailContextKey, claims.Email)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

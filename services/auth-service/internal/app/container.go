@@ -13,6 +13,7 @@ import (
 type Container struct {
 	Logger     *logger.Log
 	Handler    *handlers.Handler
+	JWTService *utils.JWTService
 	usersRepo  *postgres.UserRepository
 	tokensRepo *postgres.RefreshTokenRepository
 }
@@ -30,13 +31,14 @@ func NewContainer(logger *logger.Log, cfg *config.Config) *Container {
 	}
 
 	hasher := utils.NewBcryptHasher(cfg.Bcrypt.Cost)
-	jwtService := utils.NewJWTService(cfg.JWT.Secret, cfg.JWT.AccessTTL)
+	jwtService := utils.NewJWTService(cfg.JWT.Secret, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
 	svc := service.NewService(hasher, jwtService, tokensRepo, usersRepo)
 	handler := handlers.NewHandler(logger, svc)
 
 	return &Container{
 		Logger:     logger,
 		Handler:    handler,
+		JWTService: jwtService,
 		usersRepo:  usersRepo,
 		tokensRepo: tokensRepo,
 	}

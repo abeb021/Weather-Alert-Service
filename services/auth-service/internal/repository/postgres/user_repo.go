@@ -7,6 +7,7 @@ import (
 )
 
 var ErrUserCreate = errors.New("failed to create user")
+var ErrUserNotFound = errors.New("failed to find user")
 
 type UserRepository struct {
 	db *sql.DB
@@ -36,4 +37,42 @@ func (r *UserRepository) Create(user *models.User) error {
 		return ErrUserCreate
 	}
 	return nil
+}
+
+func (r *UserRepository) GetUser(email string) (*models.User, error) {
+	var user *models.User = &models.User{}
+
+	err := r.db.QueryRow(
+		"SELECT id, email, password_hash, created_at FROM users WHERE email=$1", email,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
+
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	return user, nil
+}
+
+func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
+	var exists bool
+
+	err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)", email).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
+func (r *UserRepository) GetUserByID(id string) (*models.User, error) {
+	user := &models.User{}
+
+	err := r.db.QueryRow(
+		"SELECT id, email, password_hash, created_at FROM users WHERE id=$1", id,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	return user, nil
 }

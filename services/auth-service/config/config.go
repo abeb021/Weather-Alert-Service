@@ -30,8 +30,9 @@ type DBConfig struct {
 }
 
 type JWTConfig struct {
-	Secret    string
-	AccessTTL time.Duration
+	Secret     string
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
 }
 
 type BcryptConfig struct {
@@ -56,8 +57,9 @@ func Load() (*Config, error) {
 			TokenURL: tokenDBURL,
 		},
 		JWT: JWTConfig{
-			Secret:    getEnv("JWT_SECRET", "secret"),
-			AccessTTL: getDurationEnv("JWT_ACCESS_TTL", time.Hour),
+			Secret:     getEnv("JWT_SECRET", "secret"),
+			AccessTTL:  getDurationEnv("JWT_ACCESS_TTL", time.Hour),
+			RefreshTTL: getDurationEnv("JWT_REFRESH_TTL", 30*24*time.Hour),
 		},
 		Bcrypt: BcryptConfig{
 			Cost: getIntEnv("BCRYPT_COST", 12),
