@@ -54,33 +54,33 @@ services:
 
   weather-service:
     build:
-      context: ../services/auth-service
+      context: ../services/weather-service
       dockerfile: Dockerfile
     expose:
       - "8002"
     env_file:
       - ../.env
     environment:
-      USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
-      TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
-      MIGRATIONS_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      USER_DB_URL: "postgres://postgres:postgres@weather-db:5432/weather?sslmode=disable"
+      TOKEN_DB_URL: "postgres://postgres:postgres@weather-db:5432/weather?sslmode=disable"
+      MIGRATIONS_DB_URL: "postgres://postgres:postgres@weather-db:5432/weather?sslmode=disable"
     networks:
       - weather-network
     depends_on:
-      auth-db:
+      weather-db:
         condition: service_healthy
     restart: unless-stopped
 
   weather-db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: auth
+      POSTGRES_DB: weather
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     expose:
       - 5432
     volumes:
-      - auth-db-data:/var/lib/postgresql/data
+      - weather-db-data:/var/lib/postgresql/data
     networks:
       - weather-network
     healthcheck:
@@ -92,33 +92,33 @@ services:
 
   alert-service:
     build:
-      context: ../services/auth-service
+      context: ../services/alert-service
       dockerfile: Dockerfile
     expose:
       - "8003"
     env_file:
       - ../.env
     environment:
-      USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
-      TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
-      MIGRATIONS_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      USER_DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
+      TOKEN_DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
+      MIGRATIONS_DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
     networks:
       - weather-network
     depends_on:
-      auth-db:
+      alert-db:
         condition: service_healthy
     restart: unless-stopped
 
   alert-db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: auth
+      POSTGRES_DB: alert
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     expose:
       - 5432
     volumes:
-      - auth-db-data:/var/lib/postgresql/data
+      - alert-db-data:/var/lib/postgresql/data
     networks:
       - weather-network
     healthcheck:
@@ -137,26 +137,26 @@ services:
     env_file:
       - ../.env
     environment:
-      USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
-      TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
-      MIGRATIONS_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      USER_DB_URL: "postgres://postgres:postgres@alert-db:5432/notification?sslmode=disable"
+      TOKEN_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
+      MIGRATIONS_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
     networks:
       - weather-network
     depends_on:
-      auth-db:
+      notification-db:
         condition: service_healthy
     restart: unless-stopped
 
   notification-db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: auth
+      POSTGRES_DB: notification
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     expose:
       - 5432
     volumes:
-      - auth-db-data:/var/lib/postgresql/data
+      - notification-db-data:/var/lib/postgresql/data
     networks:
       - weather-network
     healthcheck:
@@ -172,3 +172,7 @@ networks:
 
 volumes:
   auth-db-data:
+  alert-db-data:
+  weather-db-data:
+  notification-db-data:
+
