@@ -8,9 +8,9 @@ services:
       - weather-network
     depends_on:
       - auth-service
-      #- weather-service
-      #- alert-service
-      #- notification-service
+      - weather-service
+      - alert-service
+      - notification-service
     restart: unless-stopped 
 
   auth-service:
@@ -133,9 +133,8 @@ services:
     env_file:
       - ../.env
     environment:
-      USER_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
-      TOKEN_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
-      MIGRATIONS_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
+      DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
+      KAFKA_BROKER: "kafka:9092"
     networks:
       - weather-network
     depends_on:
