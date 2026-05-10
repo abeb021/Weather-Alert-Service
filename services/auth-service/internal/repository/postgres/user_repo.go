@@ -7,6 +7,7 @@ import (
 )
 
 var ErrUserCreate = errors.New("failed to create user")
+var ErrUserNotFound = errors.New("failed to find user")
 
 type UserRepository struct {
 	db *sql.DB
@@ -36,4 +37,18 @@ func (r *UserRepository) Create(user *models.User) error {
 		return ErrUserCreate
 	}
 	return nil
+}
+
+func (r *UserRepository) GetUser(email string) (*models.User, error) {
+	var user *models.User = &models.User{}
+
+	err := r.db.QueryRow(
+		"SELECT id, email, password_hash, created_at FROM users WHERE email=$1", email,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
+
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	return user, nil
 }
