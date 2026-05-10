@@ -11,6 +11,7 @@ import (
 
 type PasswordHasher interface {
 	Hash(password string) (string, error)
+	Compare(password, hash string) bool
 }
 
 type TokenService interface {
@@ -23,6 +24,7 @@ type RefreshTokenRepository interface {
 
 type UserRepository interface {
 	Create(user *models.User) error
+	GetUser(email string) (*models.User, error)
 }
 
 type Service struct {
@@ -62,6 +64,45 @@ func (s *Service) Register(email, password string) (*pkg_dto.TokenResponse, erro
 		user.ID.String(),
 		user.Email,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	rt := &models.RefreshToken{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		Token:     tokens.RefreshToken,
+		ExpiresAt: tokens.ExpiresAt,
+		CreatedAt: time.Now().UTC(),
+		IsRevoked: false,
+	}
+
+	if err := s.tokensRepo.Create(rt); err != nil {
+		return nil, err
+	}
+
+	return &pkg_dto.TokenResponse{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+		ExpiresAt:    tokens.ExpiresAt,
+	}, nil
+}
+
+func (s *Service) Login(email, password string) (*pkg_dto.TokenResponse, error) {
+	user, err := s.usersRepo.GetUser(email)
+	if err != nil {
+		return nil, err
+	}
+
+	if flag := s.hasher.Compare(password, user.PasswordHash); flag {
+		return nil, err
+	}
+
+	tokens, err := s.jwt.Generate(
+		user.ID.String(),
+		user.Email,
+	)
+
 	if err != nil {
 		return nil, err
 	}

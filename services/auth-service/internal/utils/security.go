@@ -19,3 +19,11 @@ func (h *BcryptHasher) Hash(password string) (string, error) {
 	)
 	return string(bytes), err
 }
+
+func (h *BcryptHasher) Compare(password, hash string) bool {
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
+		return false
+	}
+
+	return true
+}

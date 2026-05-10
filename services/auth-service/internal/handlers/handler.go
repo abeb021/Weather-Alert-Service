@@ -7,6 +7,7 @@ import (
 
 type Service interface {
 	Register(email, password string) (*pkg_dto.TokenResponse, error)
+	Login(email, password string) (*pkg_dto.TokenResponse, error)
 }
 
 type Handler struct {

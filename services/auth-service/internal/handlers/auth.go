@@ -11,12 +11,14 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid body", http.StatusBadRequest)
+		h.log.Logger.Error("register request body decoding error", "error", err)
 		return
 	}
 
 	token, err := h.service.Register(req.Email, req.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.log.Logger.Error("service error", "error", err)
 		return
 	}
 
@@ -30,12 +32,14 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid body", http.StatusBadRequest)
+		h.log.Logger.Error("login request body decoding error", "error", err)
 		return
 	}
 
 	token, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.log.Logger.Error("service error", "error", err)
 		return
 	}
 
