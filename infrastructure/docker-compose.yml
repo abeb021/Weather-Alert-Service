@@ -51,7 +51,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-
   weather-service:
     build:
       context: ../services/weather-service
@@ -67,27 +66,23 @@ services:
     networks:
       - weather-network
     depends_on:
-      weather-db:
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
-  weather-db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: weather
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+  redis:
+    image: redis:alpine
     expose:
-      - 5432
+      - 6379
     volumes:
-      - weather-db-data:/var/lib/postgresql/data
+      - redis-data:/data
     networks:
       - weather-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
       timeout: 3s
-      retries: 10
+      retries: 5
     restart: unless-stopped
 
   alert-service:
@@ -106,6 +101,8 @@ services:
       - weather-network
     depends_on:
       alert-db:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     restart: unless-stopped
 
@@ -137,13 +134,15 @@ services:
     env_file:
       - ../.env
     environment:
-      USER_DB_URL: "postgres://postgres:postgres@alert-db:5432/notification?sslmode=disable"
+      USER_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
       TOKEN_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
       MIGRATIONS_DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
     networks:
       - weather-network
     depends_on:
       notification-db:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     restart: unless-stopped
 
@@ -166,6 +165,30 @@ services:
       retries: 10
     restart: unless-stopped
 
+  kafka:
+    image: apache/kafka:latest
+    expose:
+      - 9092
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - wave-connect
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
 networks:
   weather-network:
     driver: bridge
@@ -175,4 +198,5 @@ volumes:
   alert-db-data:
   weather-db-data:
   notification-db-data:
-
+  redis-data:
+  kafka-data:
