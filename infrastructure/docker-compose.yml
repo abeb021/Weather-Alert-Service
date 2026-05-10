@@ -52,6 +52,120 @@ services:
     restart: unless-stopped
 
 
+  weather-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    expose:
+      - "8002"
+    env_file:
+      - ../.env
+    environment:
+      USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      MIGRATIONS_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+    networks:
+      - weather-network
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  weather-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    expose:
+      - 5432
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  alert-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    expose:
+      - "8003"
+    env_file:
+      - ../.env
+    environment:
+      USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      MIGRATIONS_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+    networks:
+      - weather-network
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  alert-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    expose:
+      - 5432
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    expose:
+      - "8004"
+    env_file:
+      - ../.env
+    environment:
+      USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+      MIGRATIONS_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
+    networks:
+      - weather-network
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notification-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    expose:
+      - 5432
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
 networks:
   weather-network:
     driver: bridge
