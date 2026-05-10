@@ -9,22 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Service struct {
-	hasher     PasswordHasher
-	jwt        TokenService
-	tokensRepo RefreshTokenRepository
-	usersRepo  UserRepository
-}
-
-func NewService(hasher PasswordHasher, jwt TokenService, tokensRepo RefreshTokenRepository, usersRepo UserRepository) *Service {
-	return &Service{
-		hasher:     hasher,
-		jwt:        jwt,
-		tokensRepo: tokensRepo,
-		usersRepo:  usersRepo,
-	}
-}
-
 type PasswordHasher interface {
 	Hash(password string) (string, error)
 }
@@ -39,6 +23,22 @@ type RefreshTokenRepository interface {
 
 type UserRepository interface {
 	Create(user *models.User) error
+}
+
+type Service struct {
+	hasher     PasswordHasher
+	jwt        TokenService
+	tokensRepo RefreshTokenRepository
+	usersRepo  UserRepository
+}
+
+func NewService(hasher PasswordHasher, jwt TokenService, tokensRepo RefreshTokenRepository, usersRepo UserRepository) *Service {
+	return &Service{
+		hasher:     hasher,
+		jwt:        jwt,
+		tokensRepo: tokensRepo,
+		usersRepo:  usersRepo,
+	}
 }
 
 func (s *Service) Register(email, password string) (*pkg_dto.TokenResponse, error) {
