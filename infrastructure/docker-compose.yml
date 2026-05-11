@@ -93,9 +93,8 @@ services:
     env_file:
       - ../.env
     environment:
-      USER_DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
-      TOKEN_DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
-      MIGRATIONS_DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
+      DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
+      KAFKA_BROKER: "kafka:9092"
     networks:
       - weather-network
     depends_on:
@@ -194,7 +193,6 @@ networks:
 volumes:
   auth-db-data:
   alert-db-data:
-  weather-db-data:
   notification-db-data:
   redis-data:
   kafka-data:
