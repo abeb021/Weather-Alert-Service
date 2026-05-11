@@ -16,18 +16,18 @@ func Run(logger *slog.Logger, cfg *config.Config) {
 	logger.Info("application initialized successfully")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/register", container.Handler.RegisterHandler)
-	mux.HandleFunc("/login", container.Handler.LoginHandler)
-	mux.HandleFunc("/refresh", container.Handler.RefreshHandler)
-	mux.HandleFunc("/validate", container.Handler.ValidateHandler)
-	mux.HandleFunc("/health", container.Handler.HealthHandler)
+	mux.HandleFunc("/api/auth/register", container.Handler.RegisterHandler)
+	mux.HandleFunc("/api/auth/login", container.Handler.LoginHandler)
+	mux.HandleFunc("/api/auth/refresh", container.Handler.RefreshHandler)
+	mux.HandleFunc("/api/auth/validate", container.Handler.ValidateHandler)
+	mux.HandleFunc("/api/auth/health", container.Handler.HealthHandler)
 
 	publicPaths := map[string]struct{}{
-		"/register": {},
-		"/login":    {},
-		"/refresh":  {},
-		"/validate": {},
-		"/health":   {},
+		"/api/auth/register": {},
+		"/api/auth/login":    {},
+		"/api/auth/refresh":  {},
+		"/api/auth/validate": {},
+		"/api/auth/health":   {},
 	}
 	handler := middleware.RequestLogger(container.Logger)(
 		middleware.Auth(container.JWTService, publicPaths)(mux),
