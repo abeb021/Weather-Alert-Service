@@ -2,9 +2,9 @@ package handlers
 
 import (
 	pkg_dto "auth-service/internal/pkg"
-	authservice "auth-service/internal/service"
-	"encoding/json"
+	domain_errors "auth-service/internal/domain/errors"
 	"errors"
+	"encoding/json"
 	"net/http"
 )
 
@@ -28,7 +28,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.service.Register(req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, authservice.ErrEmailAlreadyExists) {
+		if errors.Is(err, domain_errors.ErrEmailAlreadyExists) {
 			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		}

@@ -1,12 +1,11 @@
 package postgres
 
 import (
-	"auth-service/internal/models"
+	"auth-service/internal/domain/models"
 	"database/sql"
-	"errors"
+	"auth-service/internal/domain/errors"
 )
 
-var ErrRefreshTokenNotFound = errors.New("refresh token not found")
 
 type RefreshTokenRepository struct {
 	db *sql.DB
@@ -45,7 +44,7 @@ func (r *RefreshTokenRepository) GetByToken(token string) (*models.RefreshToken,
 		&refreshToken.CreatedAt,
 	)
 	if err != nil {
-		return nil, ErrRefreshTokenNotFound
+		return nil, errors.ErrRefreshTokenNotFound
 	}
 
 	return refreshToken, nil
@@ -62,7 +61,7 @@ func (r *RefreshTokenRepository) Revoke(token string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return ErrRefreshTokenNotFound
+		return errors.ErrRefreshTokenNotFound
 	}
 
 	return nil

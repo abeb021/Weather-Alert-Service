@@ -1,22 +1,17 @@
 package service
 
 import (
-	"errors"
 	"strings"
 	"time"
 
-	"auth-service/internal/models"
+	"auth-service/internal/domain/models"
+	"auth-service/internal/domain/errors"
 	pkg_dto "auth-service/internal/pkg"
 	"auth-service/internal/utils"
 
 	"github.com/google/uuid"
 )
 
-var (
-	ErrInvalidCredentials  = errors.New("invalid email or password")
-	ErrInvalidRefreshToken = errors.New("invalid refresh token")
-	ErrEmailAlreadyExists  = errors.New("email already registered")
-)
 
 type PasswordHasher interface {
 	Hash(password string) (string, error)
@@ -65,7 +60,7 @@ func (s *Service) Register(email, password string) (*pkg_dto.TokenResponse, erro
 		return nil, err
 	}
 	if exists {
-		return nil, ErrEmailAlreadyExists
+		return nil, errors.ErrEmailAlreadyExists
 	}
 
 	hash, err := s.hasher.Hash(password)
@@ -121,7 +116,7 @@ func (s *Service) Login(email, password string) (*pkg_dto.TokenResponse, error) 
 	}
 
 	if ok := s.hasher.Compare(password, user.PasswordHash); !ok {
-		return nil, ErrInvalidCredentials
+		return nil, errors.ErrInvalidCredentials
 	}
 
 	tokens, err := s.jwt.Generate(
@@ -156,10 +151,10 @@ func (s *Service) Login(email, password string) (*pkg_dto.TokenResponse, error) 
 func (s *Service) Refresh(refreshToken string) (*pkg_dto.TokenResponse, error) {
 	storedToken, err := s.tokensRepo.GetByToken(refreshToken)
 	if err != nil {
-		return nil, ErrInvalidRefreshToken
+		return nil, errors.ErrInvalidRefreshToken
 	}
 	if storedToken.IsRevoked || time.Now().UTC().After(storedToken.ExpiresAt) {
-		return nil, ErrInvalidRefreshToken
+		return nil, errors.ErrInvalidRefreshToken
 	}
 
 	user, err := s.usersRepo.GetUserByID(storedToken.UserID.String())

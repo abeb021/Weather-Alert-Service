@@ -1,13 +1,10 @@
 package postgres
 
 import (
-	"auth-service/internal/models"
+	"auth-service/internal/domain/models"
 	"database/sql"
-	"errors"
+	"auth-service/internal/domain/errors"
 )
-
-var ErrUserCreate = errors.New("failed to create user")
-var ErrUserNotFound = errors.New("failed to find user")
 
 type UserRepository struct {
 	db *sql.DB
@@ -34,7 +31,7 @@ func (r *UserRepository) Create(user *models.User) error {
 		user.ID, user.Email, user.PasswordHash, user.CreatedAt,
 	)
 	if err != nil {
-		return ErrUserCreate
+		return errors.ErrUserCreate
 	}
 	return nil
 }
@@ -47,7 +44,7 @@ func (r *UserRepository) GetUser(email string) (*models.User, error) {
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
 
 	if err != nil {
-		return nil, ErrUserNotFound
+		return nil, errors.ErrUserNotFound
 	}
 
 	return user, nil
@@ -71,7 +68,7 @@ func (r *UserRepository) GetUserByID(id string) (*models.User, error) {
 		"SELECT id, email, password_hash, created_at FROM users WHERE id=$1", id,
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return nil, errors.ErrUserNotFound
 	}
 
 	return user, nil
