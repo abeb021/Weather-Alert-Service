@@ -4,7 +4,8 @@ import (
 	"auth-service/config"
 	"auth-service/internal/app"
 	"auth-service/internal/logger"
-	"auth-service/internal/repository/migrations"
+	"auth-service/internal/repository/migrations/tokens"
+	"auth-service/internal/repository/migrations/users"
 	"os"
 )
 
@@ -17,7 +18,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := migrations.Run(cfg.DB.TokenURL)
+	if err := tokens.Run(cfg.DB.TokenURL); err != nil{
+		logger.Logger.Error("token migrations: %v", "error", err)
+	}
+
+	if err := users.Run(cfg.DB.UserURL); err != nil{
+		logger.Logger.Error("users migrations: %v", "error", err)
+	}
 
 	app.Run(logger, cfg)
 }
