@@ -10,19 +10,21 @@ import (
 )
 
 func main() {
-	logger := logger.NewLog()
+	logger := logger.New()
 
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Logger.Error("failed to load config", "error", err)
+		logger.Error("failed to load config", "error", err)
 		os.Exit(1)
 	}
 	if err := users.Run(cfg.DB.UserURL); err != nil{
-		logger.Logger.Error("users migrations: %v", "error", err)
+		logger.Error("users migrations", "error", err)
+		os.Exit(1)
 	}
 
 	if err := tokens.Run(cfg.DB.TokenURL); err != nil{
-		logger.Logger.Error("token migrations: %v", "error", err)
+		logger.Error("token migrations", "error", err)
+		os.Exit(1)
 	}
 
 	app.Run(logger, cfg)

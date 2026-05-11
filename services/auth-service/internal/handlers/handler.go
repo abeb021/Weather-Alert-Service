@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"auth-service/internal/logger"
 	pkg_dto "auth-service/internal/pkg"
+	"log/slog"
 )
 
 type Service interface {
@@ -14,10 +14,10 @@ type Service interface {
 
 type Handler struct {
 	service Service
-	log     *logger.Log
+	log     *slog.Logger
 }
 
-func NewHandler(log *logger.Log, s Service) *Handler {
+func NewHandler(log *slog.Logger, s Service) *Handler {
 	return &Handler{
 		log:     log,
 		service: s,

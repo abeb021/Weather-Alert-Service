@@ -18,7 +18,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid body", http.StatusBadRequest)
-		h.log.Logger.Error("register request body decoding error", "error", err)
+		h.log.Error("register request body decoding error", "error", err)
 		return
 	}
 	if err := validateAuthRequest(req.Email, req.Password); err != nil {
@@ -33,7 +33,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		h.log.Logger.Error("service error", "error", err)
+		h.log.Error("service error", "error", err)
 		return
 	}
 
@@ -52,7 +52,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid body", http.StatusBadRequest)
-		h.log.Logger.Error("login request body decoding error", "error", err)
+		h.log.Error("login request body decoding error", "error", err)
 		return
 	}
 	if err := validateAuthRequest(req.Email, req.Password); err != nil {
@@ -63,7 +63,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		h.log.Logger.Error("service error", "error", err)
+		h.log.Error("service error", "error", err)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (h *Handler) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid body", http.StatusBadRequest)
-		h.log.Logger.Error("refresh request body decoding error", "error", err)
+		h.log.Error("refresh request body decoding error", "error", err)
 		return
 	}
 	if err := validateRefreshRequest(req); err != nil {
@@ -93,7 +93,7 @@ func (h *Handler) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := h.service.Refresh(req.RefreshToken)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
-		h.log.Logger.Error("service error", "error", err)
+		h.log.Error("service error", "error", err)
 		return
 	}
 
