@@ -1,26 +1,26 @@
 services:
-  # api-gateway:
-  #   build:
-  #     context: ../api-gateway
-  #   ports:
-  #     - "80:80"
-  #   networks:
-  #     - weather-network
-  #   depends_on:
-  #     - auth-service
-  #     - weather-service
-  #     - alert-service
-  #     - notification-service
-  #   restart: unless-stopped
+  api-gateway:
+    build:
+       context: ../api-gateway
+    ports:
+      - "80:80"
+    networks:
+      - weather-network
+    depends_on:
+      - auth-service
+      - weather-service
+      - alert-service
+      - notification-service
+    restart: unless-stopped 
 
   auth-service:
     build:
       context: ../services/auth-service
       dockerfile: Dockerfile
-    ports:
-      - "8081:8080"
+    expose:
+      - "8001"
     env_file:
-      - ../services/auth-service/.env
+      - ../.env
     environment:
       USER_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
       TOKEN_DB_URL: "postgres://postgres:postgres@auth-db:5432/auth?sslmode=disable"
@@ -38,19 +38,153 @@ services:
       POSTGRES_DB: auth
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
+    expose:
+      - 5432
     volumes:
       - auth-db-data:/var/lib/postgresql/data
     networks:
       - weather-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
     restart: unless-stopped
 
+  weather-service:
+    build:
+      context: ../services/weather-service
+      dockerfile: Dockerfile
+    expose:
+      - "8002"
+    env_file:
+      - ../.env
+    environment:
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      REDIS_URL: "redis://redis:6379"
+    networks:
+      - weather-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    expose:
+      - 6379
+    volumes:
+      - redis-data:/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  alert-service:
+    build:
+      context: ../services/alert-service
+      dockerfile: Dockerfile
+    expose:
+      - "8003"
+    env_file:
+      - ../.env
+    environment:
+      DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
+      KAFKA_BROKER: "kafka:9092"
+    networks:
+      - weather-network
+    depends_on:
+      alert-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  alert-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: alert
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    expose:
+      - 5432
+    volumes:
+      - alert-db-data:/var/lib/postgresql/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    expose:
+      - "8004"
+    env_file:
+      - ../.env
+    environment:
+      DB_URL: "postgres://postgres:postgres@notification-db:5432/notification?sslmode=disable"
+      KAFKA_BROKER: "kafka:9092"
+    networks:
+      - weather-network
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notification-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: notification
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    expose:
+      - 5432
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  kafka:
+    image: apache/kafka:latest
+    expose:
+      - 9092
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
 networks:
   weather-network:
@@ -58,3 +192,7 @@ networks:
 
 volumes:
   auth-db-data:
+  alert-db-data:
+  notification-db-data:
+  redis-data:
+  kafka-data:
