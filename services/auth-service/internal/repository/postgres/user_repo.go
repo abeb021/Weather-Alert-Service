@@ -27,11 +27,13 @@ func (r *UserRepository) Close() error {
 
 func (r *UserRepository) Create(user *models.User) error {
 	_, err := r.db.Exec(
-		"INSERT INTO users (id, email, password_hash, created_at) VALUES ($1, $2, $3, $4)",
+		`INSERT INTO users 
+		(id, email, password_hash, created_at) 
+		VALUES ($1, $2, $3, $4)`,
 		user.ID, user.Email, user.PasswordHash, user.CreatedAt,
 	)
 	if err != nil {
-		return errors.ErrUserCreate
+		return err
 	}
 	return nil
 }
@@ -40,11 +42,17 @@ func (r *UserRepository) GetUser(email string) (*models.User, error) {
 	var user *models.User = &models.User{}
 
 	err := r.db.QueryRow(
-		"SELECT id, email, password_hash, created_at FROM users WHERE email=$1", email,
+		`SELECT id, email, password_hash, created_at
+		FROM users
+		WHERE email=$1`,
+		email,
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
 
-	if err != nil {
+	if err == sql.ErrNoRows{
 		return nil, errors.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil
@@ -53,7 +61,12 @@ func (r *UserRepository) GetUser(email string) (*models.User, error) {
 func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 	var exists bool
 
-	err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)", email).Scan(&exists)
+	err := r.db.QueryRow(
+		`SELECT EXISTS
+		(SELECT 1 FROM users WHERE email=$1)`,
+		email,
+	).Scan(&exists)
+
 	if err != nil {
 		return false, err
 	}
@@ -65,10 +78,17 @@ func (r *UserRepository) GetUserByID(id string) (*models.User, error) {
 	user := &models.User{}
 
 	err := r.db.QueryRow(
-		"SELECT id, email, password_hash, created_at FROM users WHERE id=$1", id,
+		`SELECT id, email, password_hash, created_at
+		FROM users
+		WHERE id=$1`,
+		id,
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
-	if err != nil {
+
+	if err == sql.ErrNoRows{
 		return nil, errors.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil
