@@ -2,7 +2,7 @@ package app
 
 import (
 	"auth-service/config"
-	"auth-service/internal/middleware"
+	"auth-service/internal/api/middleware"
 	"context"
 	"log/slog"
 	"net/http"

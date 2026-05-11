@@ -2,7 +2,7 @@ package app
 
 import (
 	"auth-service/config"
-	"auth-service/internal/handlers"
+	"auth-service/internal/api/handlers"
 	"auth-service/internal/repository/postgres"
 	"auth-service/internal/service"
 	"auth-service/internal/utils"
