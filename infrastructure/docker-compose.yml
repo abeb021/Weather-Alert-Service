@@ -8,9 +8,9 @@ services:
       - weather-network
     depends_on:
       - auth-service
-      - weather-service
-      - alert-service
-      - notification-service
+     # - weather-service
+     # - alert-service
+     # - notification-service
     restart: unless-stopped 
 
   auth-service:
@@ -18,7 +18,7 @@ services:
       context: ../services/auth-service
       dockerfile: Dockerfile
     expose:
-      - "8001"
+      - 8001
     env_file:
       - ../.env
     environment:
