@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:8001']
+    metrics_path: '/metrics'
+    
+  - job_name: 'weather-service'
+    static_configs:
+      - targets: ['weather-service:8002']
+      
+  - job_name: 'alert-service'
+    static_configs:
+      - targets: ['alert-service:8003']
+      
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:8004']
