@@ -8,9 +8,9 @@ services:
       - weather-network
     depends_on:
       - auth-service
-     # - weather-service
-     # - alert-service
-     # - notification-service
+      #- weather-service
+      #- alert-service
+      #- notification-service
     restart: unless-stopped 
 
   auth-service:
@@ -197,7 +197,22 @@ services:
     command: ["/bin/sh", "/init-kafka-topics.sh"]
     networks:
       - weather-network
-    
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - weather-network
+    restart: unless-stopped
+      
+      
 networks:
   weather-network:
     driver: bridge
@@ -208,3 +223,4 @@ volumes:
   notification-db-data:
   redis-data:
   kafka-data:
+  prometheus-data:
