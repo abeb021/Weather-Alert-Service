@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	pkg_dto "auth-service/internal/pkg"
+	pkg_dto "weather-service/internal/pkg"
 	"log/slog"
 )
 

@@ -1,8 +1,8 @@
 package app
 
 import (
-	"auth-service/config"
-	"auth-service/internal/api/middleware"
+	"weather-service/config"
+	"weather-service/internal/api/middleware"
 	"context"
 	"log/slog"
 	"net/http"
@@ -18,23 +18,11 @@ func Run(logger *slog.Logger, cfg *config.Config) {
 	logger.Info("application initialized successfully")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/auth/register", container.Handler.RegisterHandler)
-	mux.HandleFunc("/api/auth/login", container.Handler.LoginHandler)
-	mux.HandleFunc("/api/auth/refresh", container.Handler.RefreshHandler)
-	mux.HandleFunc("/api/auth/validate", container.Handler.ValidateHandler)
+	mux.HandleFunc("/api/weather/current", container.Handler.CurrentHandler)
 	mux.HandleFunc("/api/auth/health", container.Handler.HealthHandler)
 	mux.Handle("/metrics", promhttp.Handler())
 
-	publicPaths := map[string]struct{}{
-		"/api/auth/register": {},
-		"/api/auth/login":    {},
-		"/api/auth/refresh":  {},
-		"/api/auth/validate": {},
-		"/api/auth/health":   {},
-	}
-	handler := middleware.RequestLogger(container.Logger)(
-		middleware.Auth(container.JWTService, publicPaths)(mux),
-	)
+	handler := middleware.RequestLogger(container.Logger)(mux)
 
 	server := &http.Server{
 		Addr:    cfg.Server.Addr,

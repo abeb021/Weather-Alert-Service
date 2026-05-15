@@ -1,11 +1,9 @@
 package app
 
 import (
-	"auth-service/config"
-	"auth-service/internal/api/handlers"
-	"auth-service/internal/repository/postgres"
-	"auth-service/internal/service"
-	"auth-service/internal/utils"
+	"weather-service/config"
+	"weather-service/internal/api/handlers"
+	"weather-service/internal/service"
 	"log/slog"
 	"os"
 )
@@ -14,32 +12,15 @@ type Container struct {
 	Logger     *slog.Logger
 	Handler    *handlers.Handler
 	JWTService *utils.JWTService
-	usersRepo  *postgres.UserRepository
-	tokensRepo *postgres.RefreshTokenRepository
+	Cache *postgres.RefreshTokenRepository
 }
 
 func NewContainer(logger *slog.Logger, cfg *config.Config) *Container {
-	usersRepo, err := postgres.NewUserRepository(cfg.DB.UserURL)
-	if err != nil {
-		logger.Error("failed to initialize user repository", "error", err)
-		os.Exit(1)
-	}
-	tokensRepo, err := postgres.NewRefreshTokenRepository(cfg.DB.TokenURL)
-	if err != nil {
-		logger.Error("failed to initialize refresh token repository", "error", err)
-		os.Exit(1)
-	}
-
-	hasher := utils.NewBcryptHasher(cfg.Bcrypt.Cost)
-	jwtService := utils.NewJWTService(cfg.JWT.Secret, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
 	svc := service.NewService(hasher, jwtService, tokensRepo, usersRepo)
 	handler := handlers.NewHandler(logger, svc)
 
 	return &Container{
 		Logger:     logger,
 		Handler:    handler,
-		JWTService: jwtService,
-		usersRepo:  usersRepo,
-		tokensRepo: tokensRepo,
 	}
 }
