@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const defaultEnvPath = ".env"
+const defaultEnvPath = "../../.env"
 
 type Config struct {
 	Server ServerConfig

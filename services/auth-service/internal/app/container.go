@@ -2,31 +2,31 @@ package app
 
 import (
 	"auth-service/config"
-	"auth-service/internal/handlers"
-	"auth-service/internal/logger"
+	"auth-service/internal/api/handlers"
 	"auth-service/internal/repository/postgres"
 	"auth-service/internal/service"
 	"auth-service/internal/utils"
+	"log/slog"
 	"os"
 )
 
 type Container struct {
-	Logger     *logger.Log
+	Logger     *slog.Logger
 	Handler    *handlers.Handler
 	JWTService *utils.JWTService
 	usersRepo  *postgres.UserRepository
 	tokensRepo *postgres.RefreshTokenRepository
 }
 
-func NewContainer(logger *logger.Log, cfg *config.Config) *Container {
+func NewContainer(logger *slog.Logger, cfg *config.Config) *Container {
 	usersRepo, err := postgres.NewUserRepository(cfg.DB.UserURL)
 	if err != nil {
-		logger.Logger.Error("failed to initialize user repository", "error", err)
+		logger.Error("failed to initialize user repository", "error", err)
 		os.Exit(1)
 	}
 	tokensRepo, err := postgres.NewRefreshTokenRepository(cfg.DB.TokenURL)
 	if err != nil {
-		logger.Logger.Error("failed to initialize refresh token repository", "error", err)
+		logger.Error("failed to initialize refresh token repository", "error", err)
 		os.Exit(1)
 	}
 
