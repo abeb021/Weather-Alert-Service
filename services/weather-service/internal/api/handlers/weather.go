@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	pkg_dto "auth-service/internal/pkg"
 	domain_errors "auth-service/internal/domain/errors"
 	"errors"
 	"encoding/json"
@@ -100,4 +99,15 @@ func (h *Handler) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(token)
+}
+
+func (h *Handler) CurrentHandler(w http.ResponseWriter, r *http.Request) {
+	city := strings.TrimSpace(r.URL.Query().Get("city"))
+
+	if city == "" {
+		http.Error(w, "city is required", http.StatusBadRequest)
+		return
+	}
+
+	weather, err := h.
 }
