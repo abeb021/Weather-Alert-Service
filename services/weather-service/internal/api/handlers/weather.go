@@ -109,5 +109,5 @@ func (h *Handler) CurrentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	weather, err := h.
+	weather, err := h.client.Fetch(city)
 }
