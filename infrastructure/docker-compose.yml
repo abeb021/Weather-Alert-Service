@@ -8,9 +8,9 @@ services:
       - weather-network
     depends_on:
       - auth-service
-      - weather-service
-      - alert-service
-      - notification-service
+      #- weather-service
+      #- alert-service
+      #- notification-service
     restart: unless-stopped 
 
   auth-service:

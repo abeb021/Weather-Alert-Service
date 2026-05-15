@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func Run(logger *logger.Log, cfg *config.Config) {
@@ -21,6 +23,7 @@ func Run(logger *logger.Log, cfg *config.Config) {
 	mux.HandleFunc("/refresh", container.Handler.RefreshHandler)
 	mux.HandleFunc("/validate", container.Handler.ValidateHandler)
 	mux.HandleFunc("/health", container.Handler.HealthHandler)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	publicPaths := map[string]struct{}{
 		"/register": {},
