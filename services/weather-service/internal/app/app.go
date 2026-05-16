@@ -18,9 +18,9 @@ func Run(logger *slog.Logger, cfg *config.Config) {
 	logger.Info("application initialized successfully")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/weather/current", container.Handler.CurrentHandler)
+	mux.HandleFunc("GET /api/weather/current", container.Handler.CurrentWeatherHandler)
 	mux.HandleFunc("GET /api/weather/forecast", container.Handler.ForecastHandler)
-	mux.HandleFunc("/api/auth/health", container.Handler.HealthHandler)
+	mux.HandleFunc("GET /api/auth/health", container.Handler.HealthHandler)
 	mux.Handle("/metrics", promhttp.Handler())
 
 	handler := middleware.RequestLogger(container.Logger)(mux)
