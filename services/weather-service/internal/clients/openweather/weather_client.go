@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-	"weather-service/internal/domain/models"
 	domainErrors "weather-service/internal/domain/errors"
+	"weather-service/internal/domain/models"
 )
 
 const baseURL = "https://api.openweathermap.org/data/2.5/"
@@ -34,23 +34,23 @@ type WeatherData struct {
 }
 
 type ForecastData struct {
-    City struct {
-        Name string `json:"name"`
-    } `json:"city"`
-    List []struct {
-        DtTxt string `json:"dt_txt"`
-        Main  struct {
-            Temp     float64 `json:"temp"`
-            Humidity int     `json:"humidity"`
-        } `json:"main"`
-        Weather []struct {
-            Main string `json:"main"`
-        } `json:"weather"`
-        Wind struct {
-            Speed float64 `json:"speed"`
-        } `json:"wind"`
-        Pop float64 `json:"pop"`
-    } `json:"list"`
+	City struct {
+		Name string `json:"name"`
+	} `json:"city"`
+	List []struct {
+		DtTxt string `json:"dt_txt"`
+		Main  struct {
+			Temp     float64 `json:"temp"`
+			Humidity int     `json:"humidity"`
+		} `json:"main"`
+		Weather []struct {
+			Main string `json:"main"`
+		} `json:"weather"`
+		Wind struct {
+			Speed float64 `json:"speed"`
+		} `json:"wind"`
+		Pop float64 `json:"pop"`
+	} `json:"list"`
 }
 
 func NewClient(apiKey string) *Client {
@@ -104,54 +104,63 @@ func (c *Client) Fetch(city string) (*models.Weather, error) {
 }
 
 func (c *Client) FetchForecast(city string) (*models.Weather, error) {
-    params := url.Values{}
-    params.Set("q", city)
-    params.Set("appid", c.apiKey)
-    params.Set("units", "metric")
+	params := url.Values{}
+	params.Set("q", city)
+	params.Set("appid", c.apiKey)
+	params.Set("units", "metric")
 
 	fullURL := fmt.Sprintf("%s/forecast?%s", baseURL, params.Encode())
 
-    resp, err := c.httpClient.Get(fullURL)
-    if err != nil {
-        return nil, fmt.Errorf("%w: %v", domainErrors.ErrAPIUnavailable, err)
-    }
-    defer resp.Body.Close()
+	resp, err := c.httpClient.Get(fullURL)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", domainErrors.ErrAPIUnavailable, err)
+	}
+	defer resp.Body.Close()
 
-    switch resp.StatusCode {
-    case http.StatusOK:
-    case http.StatusNotFound:
-        return nil, domainErrors.ErrCityNotFound
-    case http.StatusUnauthorized:
-        return nil, domainErrors.ErrInvalidAPIKey
-    default:
-        return nil, fmt.Errorf("%w: status %d", domainErrors.ErrAPIUnavailable, resp.StatusCode)
-    }
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusNotFound:
+		return nil, domainErrors.ErrCityNotFound
+	case http.StatusUnauthorized:
+		return nil, domainErrors.ErrInvalidAPIKey
+	default:
+		return nil, fmt.Errorf("%w: status %d", domainErrors.ErrAPIUnavailable, resp.StatusCode)
+	}
 
-    var fd ForecastData
-    if err := json.NewDecoder(resp.Body).Decode(&fd); err != nil {
-        return nil, fmt.Errorf("%w: decode: %v", domainErrors.ErrAPIUnavailable, err)
-    }
+	var fd ForecastData
+	if err := json.NewDecoder(resp.Body).Decode(&fd); err != nil {
+		return nil, fmt.Errorf("%w: decode: %v", domainErrors.ErrAPIUnavailable, err)
+	}
 
-    // Маппинг ForecastData → models.Weather
-    weather := &models.Weather{
-        City:      fd.City.Name,
-        Timestamp: time.Now(),
-    }
+	type slot struct {
+		time      time.Time
+		temp      float64
+		humidity  int
+		windSpeed float64
+		pop       float64
+		condition string
+	}
 
-    for _, item := range fd.List {
-		parsedTime, err := time.Parse("2006-01-02 15:04:05", item.DtTxt)
+	days := make(map[string][]slot)
+	for _, item := range fd.List {
+		parsed, err := time.Parse("2006-01-02 15:04:05", item.DtTxt)
 		if err != nil {
 			continue //битая дата, пропускаем
 		}
-        weather.Forecast = append(weather.Forecast, models.DailyForecast{
-            Date:      parsedTime,
-            TempDay:   item.Main.Temp,
-            Humidity:  item.Main.Humidity,
-            Condition: item.Weather[0].Main,
-            WindSpeed: item.Wind.Speed,
-            RainProb:  item.Pop,
-        })
-    }
+		dateKey := parsed.Format("2006-01-02")
+		cond := "Unknown"
+		if len(item.Weather) > 0 {
+			cond = item.Weather[0].Main
+		}
+		days[dateKey] = append(days[dateKey], slot{
+			time:      parsed,
+			temp:      item.Main.Temp,
+			humidity:  item.Main.Humidity,
+			windSpeed: item.Wind.Speed,
+			pop:       item.Pop,
+			condition: cond,
+		})
+	}
 
-    return weather, nil
+	return weather, nil
 }
