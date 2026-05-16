@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 	"weather-service/internal/domain/models"
+	domainErrors "weather-service/internal/domain/errors"
 )
 
 const baseURL = "https://api.openweathermap.org/data/2.5/weather"
@@ -49,7 +50,7 @@ func (c *Client) Fetch(city string) (*models.Weather, error) {
 
 	resp, err := c.httpClient.Get(fullURL)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrAPIUnavailable, err)
+		return nil, fmt.Errorf("%w: %v", domainErrors.ErrAPIUnavailable, err)
 	}
 	defer resp.Body.Close()
 
@@ -57,16 +58,16 @@ func (c *Client) Fetch(city string) (*models.Weather, error) {
 	case http.StatusOK:
 
 	case http.StatusNotFound:
-		return nil, ErrCityNotFound
+		return nil, domainErrors.ErrCityNotFound
 	case http.StatusUnauthorized:
-		return nil, ErrInvalidAPIKey
+		return nil, domainErrors.ErrInvalidAPIKey
 	default:
-		return nil, fmt.Errorf("%w: status %d", ErrAPIUnavailable, resp.StatusCode)
+		return nil, fmt.Errorf("%w: status %d", domainErrors.ErrAPIUnavailable, resp.StatusCode)
 	}
 
 	var wd WeatherData
 	if err := json.NewDecoder(resp.Body).Decode(&wd); err != nil {
-		return nil, fmt.Errorf("%w: decode: %v", ErrAPIUnavailable, err)
+		return nil, fmt.Errorf("%w: decode: %v", domainErrors.ErrAPIUnavailable, err)
 	}
 
 	data := &models.Weather{
