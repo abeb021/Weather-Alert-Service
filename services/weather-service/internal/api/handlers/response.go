@@ -34,6 +34,7 @@ func writeProblem(w http.ResponseWriter, r *http.Request, status int, title, det
 	json.NewEncoder(w).Encode(ProblemDetail{
 		Type: "about:blank",
 		Title: title,
+		Status: status,
 		Detail: detail,
 		Instance: r.URL.String(),
 	})

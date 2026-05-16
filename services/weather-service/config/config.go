@@ -13,10 +13,9 @@ import (
 const defaultEnvPath = "../../.env"
 
 type Config struct {
-	Server ServerConfig
-	DB     DBConfig
-	JWT    JWTConfig
-	Bcrypt BcryptConfig
+	Server            ServerConfig
+	OpenWeatherAPIKey string
+	RedisURL          string
 }
 
 type ServerConfig struct {
@@ -24,50 +23,22 @@ type ServerConfig struct {
 	GracefulShutdownTimeout time.Duration
 }
 
-type DBConfig struct {
-	UserURL  string
-	TokenURL string
-}
-
-type JWTConfig struct {
-	Secret     string
-	AccessTTL  time.Duration
-	RefreshTTL time.Duration
-}
-
-type BcryptConfig struct {
-	Cost int
-}
-
 func Load() (*Config, error) {
 	if err := LoadDotEnv(defaultEnvPath); err != nil {
 		return nil, err
 	}
-
-	userDBURL := getEnv("USER_DB_URL", "postgres://postgres:postgres@localhost:5432/auth?sslmode=disable")
-	tokenDBURL := getEnv("TOKEN_DB_URL", userDBURL)
 
 	cfg := &Config{
 		Server: ServerConfig{
 			Addr:                    getEnv("SERVER_ADDR", ":8080"),
 			GracefulShutdownTimeout: getDurationEnv("GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second),
 		},
-		DB: DBConfig{
-			UserURL:  userDBURL,
-			TokenURL: tokenDBURL,
-		},
-		JWT: JWTConfig{
-			Secret:     getEnv("JWT_SECRET", "secret"),
-			AccessTTL:  getDurationEnv("JWT_ACCESS_TTL", time.Hour),
-			RefreshTTL: getDurationEnv("JWT_REFRESH_TTL", 30*24*time.Hour),
-		},
-		Bcrypt: BcryptConfig{
-			Cost: getIntEnv("BCRYPT_COST", 12),
-		},
+		OpenWeatherAPIKey: getEnv("OPENWEATHER_API_KEY", ""),
+		RedisURL: getEnv("REDIS_URL", "redis://redis:6379"),
 	}
 
-	if cfg.Bcrypt.Cost < 4 {
-		return nil, errors.New("BCRYPT_COST must be at least 4")
+	if cfg.OpenWeatherAPIKey == "" {
+		return nil, errors.New("OpenWeatherAPIKey not specified")
 	}
 
 	return cfg, nil
