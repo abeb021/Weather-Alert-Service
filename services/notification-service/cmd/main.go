@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrConfigLoad = errors.New("failed to load config")
-	ErrServerRun  = errors.New("failed to run smtp server")
+	ErrConfigLoad           = errors.New("failed to load config")
+	ErrServerInitialization = errors.New("failed to initialize server")
+	ErrServerRun            = errors.New("failed to run server")
 )
 
 func main() {
@@ -21,8 +22,14 @@ func main() {
 		return
 	}
 
-	if err = app.Run(cfg, logger); err != nil {
-		logger.Info(ErrServerRun.Error())
+	app, err := app.New(cfg, logger)
+	if err != nil {
+		logger.Error(ErrServerInitialization.Error(), err)
+		return
+	}
+
+	if err = app.Run(); err != nil {
+		logger.Error(ErrServerRun.Error(), err)
 		return
 	}
 }
