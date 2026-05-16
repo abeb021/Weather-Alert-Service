@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"time"
 	domainErrors "weather-service/internal/domain/errors"
 	"weather-service/internal/domain/models"
@@ -162,5 +163,68 @@ func (c *Client) FetchForecast(city string) (*models.Weather, error) {
 		})
 	}
 
+	weather := &models.Weather{
+		City: fd.City.Name,
+		Timestamp: time.Now(),
+	}
+
+	for dateKey, slots := range days {
+		var dayTemp, nightTemp float64
+        var dayCount, nightCount int
+        var maxWind, maxPop float64
+        var sumHumidity int
+        condCount := make(map[string]int)
+
+		for _, s := range slots {
+			hour := s.time.Hour()
+			if hour >= 6 && hour < 10{
+				dayTemp += s.temp
+				dayCount++
+			} else {
+				nightTemp += s.temp
+				nightCount++
+			}
+			if s.windSpeed > maxWind {
+				maxWind = s.windSpeed
+			}
+			if s.pop > maxPop {
+				maxPop = s.pop
+			}
+			sumHumidity += s.humidity
+			condCount[s.condition]++
+		}
+
+		var avgDay, avgNight float64
+        if dayCount > 0 {
+            avgDay = dayTemp / float64(dayCount)
+        }
+        if nightCount > 0 {
+            avgNight = nightTemp / float64(nightCount)
+        }
+		
+		dominantCond := "Unknown"
+		maxCount := 0
+		for cond, count := range condCount {
+			if count > maxCount {
+				maxCount = count
+				dominantCond = cond
+			}
+		}
+
+		parsedDate, _ := time.Parse("2006-01-02", dateKey)
+		weather.Forecast = append(weather.Forecast, models.DailyForecast{
+            Date:      parsedDate,
+            TempDay:   avgDay,
+            TempNight: avgNight,
+            Condition: dominantCond,
+            WindSpeed: maxWind,
+            Humidity:  sumHumidity / len(slots),
+            RainProb:  maxPop,
+		})
+	}
+
+	sort.Slice(weather.Forecast, func(i, j int) bool {
+		return weather.Forecast[i].Date.Before(weather.Forecast[j].Date)
+	})
 	return weather, nil
 }
