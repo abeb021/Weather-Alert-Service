@@ -1,21 +1,15 @@
 package config
 
-import (
-	"time"
-)
-
 type Config struct {
-	SMTP SMTPConfig
+	Client ClientConfig
 }
 
-type SMTPConfig struct {
-	Address           string
-	Domain            string
-	WriteTimeout      time.Duration
-	ReadTimeout       time.Duration
-	MaxMessageBytes   int64
-	MaxRecipients     int
-	AllowInsecureAuth bool
+type ClientConfig struct {
+	host     string
+	port     string
+	username string
+	password string
+	from     string
 }
 
 func Load() (*Config, error) {
