@@ -90,12 +90,15 @@ func (c *Client) Fetch(city string) (*models.Weather, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&wd); err != nil {
 		return nil, fmt.Errorf("%w: decode: %v", domainErrors.ErrAPIUnavailable, err)
 	}
-
+	condition := "Unknown"
+	if len(wd.Weather) > 0 {
+		condition = wd.Weather[0].Main
+	}
 	data := &models.Weather{
 		City:        wd.Name,
 		Temperature: wd.Main.Temp,
 		FeelsLike:   wd.Main.FeelsLike,
-		Condition:   wd.Weather[0].Main,
+		Condition:   condition,
 		WindSpeed:   wd.Wind.Speed,
 		Humidity:    wd.Main.Humidity,
 		Timestamp:   time.Now(),
@@ -164,20 +167,20 @@ func (c *Client) FetchForecast(city string) (*models.Weather, error) {
 	}
 
 	weather := &models.Weather{
-		City: fd.City.Name,
+		City:      fd.City.Name,
 		Timestamp: time.Now(),
 	}
 
 	for dateKey, slots := range days {
 		var dayTemp, nightTemp float64
-        var dayCount, nightCount int
-        var maxWind, maxPop float64
-        var sumHumidity int
-        condCount := make(map[string]int)
+		var dayCount, nightCount int
+		var maxWind, maxPop float64
+		var sumHumidity int
+		condCount := make(map[string]int)
 
 		for _, s := range slots {
 			hour := s.time.Hour()
-			if hour >= 6 && hour < 10{
+			if hour >= 6 && hour < 18 {
 				dayTemp += s.temp
 				dayCount++
 			} else {
@@ -195,13 +198,13 @@ func (c *Client) FetchForecast(city string) (*models.Weather, error) {
 		}
 
 		var avgDay, avgNight float64
-        if dayCount > 0 {
-            avgDay = dayTemp / float64(dayCount)
-        }
-        if nightCount > 0 {
-            avgNight = nightTemp / float64(nightCount)
-        }
-		
+		if dayCount > 0 {
+			avgDay = dayTemp / float64(dayCount)
+		}
+		if nightCount > 0 {
+			avgNight = nightTemp / float64(nightCount)
+		}
+
 		dominantCond := "Unknown"
 		maxCount := 0
 		for cond, count := range condCount {
@@ -213,13 +216,13 @@ func (c *Client) FetchForecast(city string) (*models.Weather, error) {
 
 		parsedDate, _ := time.Parse("2006-01-02", dateKey)
 		weather.Forecast = append(weather.Forecast, models.DailyForecast{
-            Date:      parsedDate,
-            TempDay:   avgDay,
-            TempNight: avgNight,
-            Condition: dominantCond,
-            WindSpeed: maxWind,
-            Humidity:  sumHumidity / len(slots),
-            RainProb:  maxPop,
+			Date:      parsedDate,
+			TempDay:   avgDay,
+			TempNight: avgNight,
+			Condition: dominantCond,
+			WindSpeed: maxWind,
+			Humidity:  sumHumidity / len(slots),
+			RainProb:  maxPop,
 		})
 	}
 
