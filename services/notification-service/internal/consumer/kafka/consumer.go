@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 
 	"github.com/segmentio/kafka-go"
@@ -39,22 +40,38 @@ func NewConsumer(cfg *config.Config, service NotificationService, logger *slog.L
 }
 
 func (c *Consumer) Run(ctx context.Context) error {
+	c.logger.Info("Kafka consumer started")
 	for {
-		msg, err := c.reader.ReadMessage(ctx)
+		msg, err := c.reader.FetchMessage(ctx)
 		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				c.logger.Info("Kafka consumer stopped by context")
+				return err
+			}
 			return err
 		}
 
+		c.logger.Info("Kafka message received", "topic", msg.Topic, "partition", msg.Partition, "offset", msg.Offset)
+
 		var notification models.EmailNotification
 		if err := json.Unmarshal(msg.Value, &notification); err != nil {
-			c.logger.Error(ErrFailedToUnmarshalMessage, err)
+			c.logger.Error(ErrFailedToUnmarshalMessage, "error", err, "offset", msg.Offset)
+			if commitErr := c.reader.CommitMessages(ctx, msg); commitErr != nil {
+				c.logger.Error("failed to commit invalid Kafka message", "error", commitErr, "offset", msg.Offset)
+			}
 			continue
 		}
 
 		if err := c.service.SendEmailNotification(notification); err != nil {
-			c.logger.Error(ErrFailedToSendNotification, err)
+			c.logger.Error(ErrFailedToSendNotification, "error", err, "email", notification.Email, "offset", msg.Offset)
 			continue
 		}
+
+		if err := c.reader.CommitMessages(ctx, msg); err != nil {
+			c.logger.Error("failed to commit Kafka message", "error", err, "offset", msg.Offset)
+			continue
+		}
+		c.logger.Info("Kafka message processed", "topic", msg.Topic, "partition", msg.Partition, "offset", msg.Offset)
 	}
 }
 

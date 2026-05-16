@@ -10,7 +10,7 @@ services:
       - auth-service
       #- weather-service
       #- alert-service
-      #- notification-service
+      - notification-service
     restart: unless-stopped 
 
   auth-service:
@@ -51,23 +51,23 @@ services:
       retries: 10
     restart: unless-stopped
 
-  weather-service:
-    build:
-      context: ../services/weather-service
-      dockerfile: Dockerfile
-    expose:
-      - "8002"
-    env_file:
-      - ../.env
-    environment:
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
-      REDIS_URL: "redis://redis:6379"
-    networks:
-      - weather-network
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
+  # weather-service:
+  #   build:
+  #     context: ../services/weather-service
+  #     dockerfile: Dockerfile
+  #   expose:
+  #     - "8002"
+  #   env_file:
+  #     - ../.env
+  #   environment:
+  #     OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+  #     REDIS_URL: "redis://redis:6379"
+  #   networks:
+  #     - weather-network
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   restart: unless-stopped
 
   redis:
     image: redis:alpine
@@ -84,25 +84,25 @@ services:
       retries: 5
     restart: unless-stopped
 
-  alert-service:
-    build:
-      context: ../services/alert-service
-      dockerfile: Dockerfile
-    expose:
-      - "8003"
-    env_file:
-      - ../.env
-    environment:
-      DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
-      KAFKA_BROKER: "kafka:9092"
-    networks:
-      - weather-network
-    depends_on:
-      alert-db:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    restart: unless-stopped
+  # alert-service:
+  #   build:
+  #     context: ../services/alert-service
+  #     dockerfile: Dockerfile
+  #   expose:
+  #     - "8003"
+  #   env_file:
+  #     - ../.env
+  #   environment:
+  #     DB_URL: "postgres://postgres:postgres@alert-db:5432/alert?sslmode=disable"
+  #     KAFKA_BROKER: "kafka:9092"
+  #   networks:
+  #     - weather-network
+  #   depends_on:
+  #     alert-db:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   restart: unless-stopped
 
   alert-db:
     image: postgres:16-alpine

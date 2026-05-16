@@ -1,7 +1,9 @@
-package cmd
+package main
 
 import (
 	"errors"
+	"os"
+
 	"notification-service/config"
 	"notification-service/internal/app"
 	"notification-service/internal/logger"
@@ -18,18 +20,21 @@ func main() {
 
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Info(ErrConfigLoad.Error())
+		logger.Error(ErrConfigLoad.Error(), "error", err)
+		os.Exit(1)
 		return
 	}
 
 	app, err := app.New(cfg, logger)
 	if err != nil {
-		logger.Error(ErrServerInitialization.Error(), err)
+		logger.Error(ErrServerInitialization.Error(), "error", err)
+		os.Exit(1)
 		return
 	}
 
 	if err = app.Run(); err != nil {
-		logger.Error(ErrServerRun.Error(), err)
+		logger.Error(ErrServerRun.Error(), "error", err)
+		os.Exit(1)
 		return
 	}
 }
