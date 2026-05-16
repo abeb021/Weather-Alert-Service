@@ -1,14 +1,14 @@
 package app
 
 import (
-	"weather-service/config"
-	"weather-service/internal/api/middleware"
 	"context"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"weather-service/config"
+	"weather-service/internal/api/middleware"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -18,7 +18,8 @@ func Run(logger *slog.Logger, cfg *config.Config) {
 	logger.Info("application initialized successfully")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/weather/current", container.Handler.CurrentHandler)
+	mux.HandleFunc("GET /api/weather/current", container.Handler.CurrentHandler)
+	mux.HandleFunc("GET /api/weather/forecast", container.Handler.ForecastHandler)
 	mux.HandleFunc("/api/auth/health", container.Handler.HealthHandler)
 	mux.Handle("/metrics", promhttp.Handler())
 

@@ -1,21 +1,43 @@
 package handlers
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
+	domainErrors "weather-service/internal/domain/errors"
 )
 
-func (h *Handler) CurrentHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CurrentWeatherHandler(w http.ResponseWriter, r *http.Request) {
 	city := strings.TrimSpace(r.URL.Query().Get("city"))
 
 	if city == "" {
-		http.Error(w, "city is required", http.StatusBadRequest)
+		writeProblem(w, r, http.StatusBadRequest, "City Required", "The 'city' parameter is missing or empty.")	
 		return
 	}
 
-	weather, err := h.client.Fetch(city)
+	weather, err := h.cache.Get(r.Context(), city)
 	if err == nil {
-		w.Header().Set()
+		writeJSON(w, http.StatusOK, weather)
+		return
 	}
+	h.log.Debug("cache missing for current weather", "city", city)
+
+	weather, err = h.client.Fetch(city)
+	if err != nil {
+		if errors.Is(err, domainErrors.ErrCityNotFound) {
+            writeProblem(w, r, http.StatusNotFound, "City Not Found", fmt.Sprintf("The city '%s' was not found.", city))
+            return
+        }
+        h.log.Error("failed to fetch current weather", "city", city, "error", err)
+        writeProblem(w, r, http.StatusServiceUnavailable, "Service Unavailable", "The weather service is temporarily unavailable.")
+        return
+    }
+
+	if err := h.cache.Set(r.Context(), city, weather, time.Minute * 15); err != nil {
+		h.log.Warn("failed to cache current weather", "city", city, "error", err)
+	}
+
+	writeJSON(w, http.StatusOK, weather)
 }

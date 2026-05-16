@@ -56,7 +56,7 @@ func (c *Client) Fetch(city string) (*models.Weather, error) {
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-
+		//good, skip
 	case http.StatusNotFound:
 		return nil, domainErrors.ErrCityNotFound
 	case http.StatusUnauthorized:
